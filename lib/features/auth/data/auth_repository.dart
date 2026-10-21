@@ -16,7 +16,13 @@ abstract class AuthRepository {
   Future<void> sendPasswordReset(String email);
   Future<void> signOut();
   Future<void> deleteAccount();
-  Future<void> updateUserProfile({String? name, String? photoUrl, PreferredSport? preferredSport});
+  Future<void> updateUserProfile({
+    String? name,
+    String? email,
+    String? phone,
+    String? photoUrl,
+    PreferredSport? preferredSport,
+  });
 }
 
 class InMemoryAuthRepository implements AuthRepository {
@@ -129,12 +135,16 @@ class InMemoryAuthRepository implements AuthRepository {
   @override
   Future<void> updateUserProfile({
     String? name,
+    String? email,
+    String? phone,
     String? photoUrl,
     PreferredSport? preferredSport,
   }) async {
     if (_currentUser == null) return;
     _currentUser = _currentUser!.copyWith(
       name: name,
+      email: email,
+      phone: phone,
       photoUrl: photoUrl,
       preferredSport: preferredSport,
     );

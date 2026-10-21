@@ -1,249 +1,157 @@
-# TurfSpot — Implementation Plan (Screen-by-Screen, Step-by-Step)
+# TurfSpot — Profile Screen Redesign Plan
 
-> **Current Status**: ✅ Core Flutter codebase, design system, data models, state providers, and all 5 screens fully implemented and configured.
+Reference: `a4c80076-9593-4935-b3f9-6f7fe554fa40.png` (the profile screen, opened from the Home avatar or the Profile tab).
+Earlier plans are kept as `plan-splash.md`, `plan-auth.md`, `plan-home.md` and `plan-detail.md`.
 
-This document outlines the complete, phased implementation plan for the **TurfSpot** mobile application based on the [Product Requirements Document](file:///d:/Git%20hub%20project/Turf%20spot/TurfSpot%20%E2%80%94%20Product%20Requirements%20Document.md).
+## Goal
 
----
+Restyle `ProfileScreen` (`/profile`) to match the reference: a stadium header with the user's photo, name, email and city; a Preferred Sport card; three grouped menu cards (account, info, session); and the bottom navigation bar. Existing behaviour (change preferred sport, edit name, log out, delete account) keeps working, and the menu rows the reference adds get real destinations.
 
-## Architecture & Project Structure Overview
+## What the reference shows (top to bottom)
 
-The project follows a **Feature-First Clean Architecture** with **Riverpod** for state management and **go_router** for navigation.
+| # | Area | Details |
+| --- | --- | --- |
+| 1 | **Header (about 20% of height)** | Night stadium photo (floodlights, grass) under a dark green overlay. The bottom edge is a **curved wave** with a bright green ribbon sweeping in from both sides, blending into the off-white page |
+| 2 | **Avatar** | Large circle (about 80 px radius) with a white ring, on the left. A small light-lime circular **camera badge** sits at its bottom-right |
+| 3 | **Identity** | To the right of the avatar: name (white, large bold, "Deepshikha Mishra"), email (muted white), and a pin icon with the city ("Mumbai") |
+| 4 | **Preferred Sport card** | Light-green rounded card. Title "Preferred Sport" (dark green bold), subtitle "This will be your default filter on Home", an **Edit ✎** action at the top-right. Below, three equal pills: **All Sports** (grid icon), **Cricket** (bat icon), **Football** (ball icon). The selected one (Football) is dark green with white text |
+| 5 | **Account card** (white, rounded) | Four rows, each with an outline icon, a title, a grey subtitle and a chevron: **Edit Profile** ("Update your name, email or phone"), **Notifications** ("Manage your preferences"), **Saved Turfs** ("View your favourite turfs"), **Recently Viewed** ("Your recently viewed turfs") |
+| 6 | **Info card** | **About TurfSpot** ("App version 1.0.0"), **Terms & Conditions**, **Privacy Policy**, **Help & Support** |
+| 7 | **Session card** | **Log Out** ("Sign out from your account"), and **Delete Account** in red ("This action cannot be undone") with a red trash icon |
+| 8 | **Bottom navigation** | Floating white bar: Home, Explore, My Turfs, **Profile** (selected, dark green pill) |
+| 9 | **Page background** | Light off-white (`authSheet`), same palette as the auth, home and detail screens |
 
-```text
-lib/
-├── core/
-│   ├── constants/           # Colors, dimensions, asset paths, API keys
-│   ├── theme/               # Light/Dark themes, typography (Outfit/Inter), button/input styles
-│   ├── router/              # go_router definitions and auth redirect guards
-│   ├── network/             # Connectivity checker, base client utilities
-│   ├── utils/               # Debouncer, formatters, validators, permissions
-│   └── widgets/             # Reusable UI (buttons, text fields, skeletons, error views)
-├── features/
-│   ├── auth/
-│   │   ├── data/            # AuthRepository, Firebase Auth dataSource
-│   │   ├── domain/          # UserEntity, AuthState
-│   │   └── presentation/    # Login/Signup screens, OTP modal, Auth providers
-│   ├── turfs/
-│   │   ├── data/            # TurfRepository, Firestore query handlers, Geo-query
-│   │   ├── domain/          # TurfModel, PriceDetails, OpeningHours, Amenities
-│   │   └── presentation/    # Home screen, turf card, search bar, Turf Details screen
-│   └── profile/
-│       ├── data/            # ProfileRepository (Firestore update, image upload)
-│       ├── domain/          # UserProfile update models
-│       └── presentation/    # Profile screen, Edit profile modal, Settings
-└── main.dart                # App entry point, Firebase init, ProviderScope
-```
+## Gaps between the current screen and the reference
 
----
+| Area | Current code (`profile_screen.dart`) | Reference |
+| --- | --- | --- |
+| Theme | Dark slate page and dark cards | Dark hero over a light page, white and light-green cards |
+| App bar | "Profile" app bar with a back arrow | No app bar; the hero is the header |
+| Header | Small avatar with a tiny camera badge, name with a pencil icon, email | Large avatar with a camera badge, name, email, **city** |
+| Preferred sport | Three vertical radio tiles ("Both (Cricket & Football)", "Cricket Only", "Football Only") | Three horizontal pills inside a light-green card with an **Edit** action |
+| Menu | "App Settings & Info" list: Location Permission ("Allowed", hard-coded), App Version, Help & Support (snackbar), Privacy Policy and Terms of Use (empty taps) | Three grouped cards with subtitles. Adds **Edit Profile, Notifications, Saved Turfs, Recently Viewed, About**. No Location Permission row |
+| Session | Full-width Log Out button and a text "Delete Account" button | Two rows in a card; Delete Account in red |
+| Navigation | None | Bottom navigation bar |
+| Edit name | Dialog that changes the name only | "Edit Profile" row: name, email or phone |
 
-## Phase 0: Foundation & Environment Setup
+## What the reference needs that the app does not have yet
 
-### Step 0.1: Project Initialization & Dependency Configuration
-- Initialize Flutter project targeting Android 8.0+ and iOS 14+.
-- Configure `pubspec.yaml` with core packages:
-  - **State & Routing**: `flutter_riverpod`, `go_router`
-  - **Firebase**: `firebase_core`, `firebase_auth`, `cloud_firestore`, `firebase_storage`, `firebase_analytics`, `firebase_crashlytics`
-  - **Location & Maps**: `geolocator`, `google_maps_flutter`, `geoflutterfire_plus`
-  - **UI & Utilities**: `cached_network_image`, `shimmer`, `flutter_svg`, `url_launcher`, `share_plus`, `intl`
-  - **Auth Helpers**: `google_sign_in`
+Defaults below keep the work unblocked. No new dependencies unless noted.
 
-### Step 0.2: Design System & Theming (`lib/core/theme/`)
-- Define brand color palette (vibrant sports turf greens `#10B981`, dark accents `#0F172A`, surface cards, muted texts).
-- Configure responsive typography with Google Fonts (`Outfit` or `Inter`).
-- Establish global input decoration themes, elevated button themes, and card styling with 48px+ touch targets.
+| Item | Default in this plan |
+| --- | --- |
+| **Camera badge (change photo)** | Needs an image picker and, later, storage. Default: the badge opens a bottom sheet with "Take photo" and "Choose from gallery" marked "Coming soon", like the Home filter sheet. No `image_picker` dependency yet |
+| **City under the name** | The user has no city field. Show `AppConstants.defaultCity` ("Mumbai") |
+| **Email line** | Show the email, or the phone number when the user signed up with a phone |
+| **Edit Profile (name, email, phone)** | New edit sheet with the three fields and the same validation as sign-up. Needs `updateUserProfile` to accept `email` and `phone` (repository interface, in-memory implementation and `AuthController.updateProfile`) |
+| **Notifications** | No notification system exists. Default: a "Coming soon" sheet |
+| **Saved Turfs** | Favourites exist (`favouriteTurfsProvider`, session only). New screen `/saved-turfs` lists them with the Home `TurfCard`, with an empty state |
+| **Recently Viewed** | Not tracked yet. Add a `recentlyViewedProvider` (last 10 turf ids, in memory), fed when the detail screen opens. New screen `/recently-viewed`, with an empty state |
+| **About TurfSpot** | Add `AppConstants.appVersion = '1.0.0'` (no `package_info_plus`). Tapping opens `showAboutDialog` with the name, version and tagline |
+| **Terms, Privacy, Help** | Real URLs are not known. Default: Help opens `mailto:support@turfspot.com` (the address already used in the app) via `url_launcher`; Terms and Privacy open a simple in-app page saying the document will be published before launch. Swap in real URLs through two constants when you have them |
+| **Location Permission row** | Not in the reference, and the current value ("Allowed") is hard-coded. Default: remove it. The PRD lists a permission status under app settings, so this returns when GPS is built |
+| **Bottom navigation** | The reference shows four tabs; Home currently has Home and Profile only (Explore and My Turfs were declined). Default: the same two-item bar here with Profile selected |
 
-### Step 0.3: Routing Infrastructure (`lib/core/router/`)
-- Setup `GoRouter` with defined route constants:
-  - `/splash`
-  - `/auth` (login & signup)
-  - `/home` (root turf listing)
-  - `/turf/:id` (turf details)
-  - `/profile` (user profile)
-- Wire redirect logic based on Riverpod's `authStreamProvider`.
+## Design decisions
 
----
+1. **Scope: the profile screen plus the small screens it links to** (Saved Turfs, Recently Viewed, Edit Profile sheet, About dialog, placeholder sheets).
+2. **Header** reuses `StadiumBackgroundPainter` with a dark green overlay, clipped with a wave-shaped `CustomClipper`, and a lime ribbon painted along the curve at both ends.
+3. **Avatar** shows `photoUrl` when present (`Image.network` with an error fallback) and a person icon otherwise, inside a white ring.
+4. **Preferred Sport** keeps the current logic: choosing a sport calls `updateProfile(preferredSport:)` and also sets `selectedSportFilterProvider`, so Home follows. Option labels become "All Sports", "Cricket", "Football" (the stored enum values are unchanged).
+5. **Edit action on the sport card:** the pills are locked until the user taps **Edit**, which then reads **Done** (matches the reference). See the open questions.
+6. **Menu cards** use one reusable `ProfileMenuCard` (rows with icon, title, optional subtitle, chevron, optional red style, inset dividers).
+7. **Log Out and Delete Account** keep their confirmation dialogs (restyled light) and the same calls (`signOut`, `deleteAccount`, then `context.go('/auth')`).
+8. **Navigation:** Home opens Profile with `push`. In the Profile bar, tapping Home calls `context.go('/home')` and tapping Profile does nothing. System back still returns to Home.
+9. **Responsive:** content is width-capped and centred on tablets; the header's text truncates with an ellipsis on narrow screens and long names or emails; text scales with the system font size.
 
-## Phase 1: Screen 1 — Splash Screen
+## Files
 
-### Objective
-Provide immediate visual feedback on cold start (<3s target) and seamlessly route users based on existing session state.
+| File | Change |
+| --- | --- |
+| `lib/features/profile/presentation/screens/profile_screen.dart` | Rewrite the layout; keep the logout and delete flows and the sport-sync logic |
+| `lib/features/profile/presentation/widgets/profile_header.dart` | New. Stadium header with wave, avatar, camera badge, name, email, city |
+| `lib/features/profile/presentation/widgets/preferred_sport_card.dart` | New. Light-green card with the Edit / Done action and three pills |
+| `lib/features/profile/presentation/widgets/profile_menu_card.dart` | New. Grouped rows with icons, subtitles, chevrons and a red variant |
+| `lib/features/profile/presentation/widgets/edit_profile_sheet.dart` | New. Name, email and phone with validation |
+| `lib/features/profile/presentation/widgets/coming_soon_sheet.dart` | New. Reusable placeholder (photo options, Notifications) |
+| `lib/features/profile/presentation/screens/saved_turfs_screen.dart` | New. Favourite turfs list using `TurfCard` |
+| `lib/features/profile/presentation/screens/recently_viewed_screen.dart` | New. Recently viewed turfs list |
+| `lib/features/profile/presentation/screens/info_page_screen.dart` | New. Simple Terms / Privacy placeholder page |
+| `lib/features/turfs/presentation/providers/turf_provider.dart` | Add `recentlyViewedProvider` and a provider that resolves turf ids to `TurfModel`s |
+| `lib/features/turfs/presentation/screens/turf_detail_screen.dart` | Record the turf in `recentlyViewedProvider` when it loads |
+| `lib/features/auth/data/auth_repository.dart` | `updateUserProfile` gains optional `email` and `phone` (interface and in-memory implementation) |
+| `lib/features/auth/presentation/providers/auth_provider.dart` | `AuthController.updateProfile` passes `email` and `phone` through |
+| `lib/core/constants/app_constants.dart` | Add `appVersion`, `supportEmail` |
+| `lib/core/router/app_router.dart` | Add `/saved-turfs`, `/recently-viewed` and the Terms / Privacy page routes |
+| `lib/core/widgets/app_bottom_nav.dart` | Reused unchanged |
 
-### Step-by-Step Implementation:
-1. **Presentation (`features/auth/presentation/screens/splash_screen.dart`)**:
-   - Create animated splash screen with TurfSpot branding and loading indicator.
-2. **Session Verification Logic**:
-   - Initialize Firebase and fetch `FirebaseAuth.instance.authStateChanges()`.
-   - Preload cached user profile from local cache / Firestore.
-3. **Route Navigation Guard**:
-   - If user session is active $\rightarrow$ Navigate to `/home`.
-   - If user is unauthenticated $\rightarrow$ Navigate to `/auth`.
+Unchanged: auth screens, the repository logic for sign-in, search and filter providers.
 
----
+## Implementation steps
 
-## Phase 2: Screen 2 — Login and Sign-Up Screen
+1. **Data layer.** Extend `updateUserProfile` and `updateProfile` with `email` and `phone`; add `appVersion` and `supportEmail`; add `recentlyViewedProvider` and the id-to-turf provider.
+2. **Shared widgets.** `ProfileMenuCard`, `ComingSoonSheet`.
+3. **Header.** `ProfileHeader` with the clipped stadium, ribbon, avatar, camera badge and identity block. Respect the status bar inset.
+4. **Preferred Sport card.** Pills, selected state, Edit / Done behaviour, wiring to the existing sport sync.
+5. **Menu cards.** Build the three groups with the rows and subtitles from the reference, and connect each row:
+   - Edit Profile opens the edit sheet
+   - Notifications opens the placeholder
+   - Saved Turfs and Recently Viewed push their screens
+   - About opens the dialog
+   - Terms and Privacy open the info pages
+   - Help opens the mail app
+   - Log Out and Delete Account keep their dialogs
+6. **Edit Profile sheet.** Validate name (required), email format and 10-digit phone, and require at least one of email or phone, as in the PRD data model.
+7. **New screens.** Saved Turfs and Recently Viewed with the light list style and empty states ("No saved turfs yet", "Nothing viewed yet").
+8. **Recently viewed tracking.** Record on detail open: move to the front if already present, cap at 10.
+9. **Assemble the screen** with the bottom bar and the loading and logged-out cases (the user can be null briefly after logout: show nothing or redirect to `/auth`).
+10. **Responsive and accessibility pass.** Small phone, large phone, tablet, large fonts, 48 px tap targets, `Semantics` labels on the camera badge, the Edit action and the chevron rows.
 
-### Objective
-Allow users to create an account or authenticate via Email/Password, Phone OTP, or Google Sign-In with robust inline validation.
+## Behaviour that must not change
 
-### Step-by-Step Implementation:
-1. **Data Layer (`features/auth/data/`)**:
-   - Create `AuthRepository` implementing:
-     - `signInWithEmailAndPassword(email, password)`
-     - `signUpWithEmailAndPassword(name, email, password)`
-     - `sendPhoneOtp(phoneNumber, onCodeSent, onVerificationFailed)`
-     - `verifyPhoneOtp(verificationId, smsCode)`
-     - `signInWithGoogle()`
-     - `sendPasswordResetEmail(email)`
-2. **State Management (`features/auth/presentation/providers/`)**:
-   - Create `authControllerProvider` managing `AsyncValue<UserEntity?>`.
-   - Implement toggle state between **Login** and **Sign-Up** tabs.
-3. **Presentation & Form Validation (`features/auth/presentation/screens/auth_screen.dart`)**:
-   - Build dual tab interface (Login / Sign-up).
-   - Form fields with inline validators:
-     - Name: required on sign-up.
-     - Email: regex format check.
-     - Phone: 10-digit numeric check.
-     - Password: minimum 8 characters.
-   - Build **Phone OTP Bottom Sheet / Verification Dialog** with 6-digit pin input and auto-resend countdown timer.
-   - Add "Forgot Password" link triggering reset link dialog.
-   - Add "Continue with Google" branded button.
-   - Handle descriptive error snackbars (wrong password, user-not-found, email-already-in-use, network error).
+- Changing the preferred sport updates the user and the default filter on Home.
+- Log Out confirms, clears the session and goes to `/auth`; Delete Account confirms, removes the account and goes to `/auth`.
+- Opening Profile from the Home avatar and returning with Back works.
+- Editing the name still updates it everywhere the user is shown (Home avatar, header).
 
----
+## Verification
 
-## Phase 3: Screen 3 — Home Screen (Search & Turf Listing)
+Flutter is not installed in the shell used so far, so none of this can be compiled or viewed from there. Before calling it done:
 
-### Objective
-The primary discovery hub where users search, filter, and view nearby sports turfs sorted by distance.
+1. Install Flutter and run `flutter create . --project-name turf_spot --platforms android,ios` (no `android/` or `ios/` folder exists yet).
+2. `flutter analyze` with no errors in the touched files.
+3. Run on an emulator and compare to the reference section by section.
+4. Walk through: change sport and check Home's filter, edit profile (valid and invalid input), favourite a turf and see it under Saved Turfs, open a turf and see it under Recently Viewed, each menu row, log out, delete account, a user with a phone and no email, a long name and email, large font size.
+5. Tests: widget tests for the sport card (locked until Edit, selection updates the provider), the edit-profile validators, and the recently-viewed ordering and cap.
 
-### Step-by-Step Implementation:
-1. **Location Integration (`core/utils/location_service.dart`)**:
-   - Implement GPS permission check via `geolocator`.
-   - On grant $\rightarrow$ Obtain user latitude & longitude.
-   - On denial/permanent denial $\rightarrow$ Open Area Picker fallback modal (select neighborhood/area manually).
-2. **Data & Query Layer (`features/turfs/data/`)**:
-   - Implement `TurfRepository.getTurfs({sportFilter, searchQuery, sortBy, userLocation, limit, lastDoc})`.
-   - Distance calculation utility (Haversine formula / `geolocator.distanceBetween`).
-   - Query filters: `isActive == true`, matching `sports` array (`cricket`, `football`), and prefix match on `nameLowercase`.
-3. **State Management (`features/turfs/presentation/providers/`)**:
-   - `turfListNotifierProvider`: Infinite-scrolling paginated list (20 per page).
-   - `searchQueryProvider`: 300ms debounced text stream.
-   - `selectedSportFilterProvider`: Enum state (`Both`, `Cricket`, `Football`), initialized with user's preferred sport.
-   - `sortByProvider`: Enum state (`Nearest`, `Price: Low to High`, `Price: High to Low`).
-4. **Presentation (`features/turfs/presentation/screens/home_screen.dart`)**:
-   - **Header & Location Bar**: Displays current detected area with a tap-to-change button and profile avatar avatar leading to `/profile`.
-   - **Search Bar**:
-     - Sticky top input with clear icon.
-     - Triggers live search on 2+ characters with debouncing.
-   - **Filter & Sort Chips**:
-     - Horizontal scrolling chips for sports: `All`, `Cricket`, `Football`.
-     - Dropdown / bottom sheet for sort options (`Nearest`, `Price low to high`, `Price high to low`).
-   - **Turf Card (`widgets/turf_card.dart`)**:
-     - Cached cover photo with rounded corners and aspect ratio.
-     - Badge tags: sports supported (`Cricket`, `Football`).
-     - Title, area name, calculated distance (`X.X km away`).
-     - Starting price (`₹XXX / hr`).
-     - Tap handler navigating to `/turf/:id`.
-   - **List Handling & States**:
-     - Shimmer skeleton cards during initial load.
-     - Pull-to-refresh (`RefreshIndicator`).
-     - Infinite scroll trigger at 80% scroll depth.
-     - Empty search state: "No turfs found" with a "Clear search" CTA.
-     - Offline banner when internet is unavailable.
+## Acceptance checklist
 
----
+- [ ] Stadium header with wave, ribbon, large avatar, camera badge, name, email and city
+- [ ] Preferred Sport card with Edit / Done and three pills, selected pill dark green
+- [ ] Account, Info and Session cards with the reference rows, icons, subtitles and chevrons
+- [ ] Delete Account shown in red
+- [ ] Edit Profile, Saved Turfs, Recently Viewed, About, Terms, Privacy and Help each lead somewhere
+- [ ] Bottom bar with Profile selected; Home returns to the list
+- [ ] Log Out and Delete Account behave as before
+- [ ] No new dependencies; the reference image is never shown in the app
+- [ ] No overflow on small screens or large text sizes
 
-## Phase 4: Screen 4 — Turf Details Screen
+## Decisions (confirmed)
 
-### Objective
-Present comprehensive details for a specific turf, allowing players to review facilities and take immediate action (Call, Directions, Share).
+- **Edit on the sport card:** the pills are locked until Edit is tapped (Edit then reads Done).
+- **Change photo:** "Coming soon" placeholder sheet, no `image_picker`.
+- **Terms and Privacy:** no real URLs, so they open placeholder pages. Help opens `mailto:support@turfspot.com`.
+- **Notifications:** "Coming soon" placeholder.
+- **Location Permission row:** removed.
+- **Bottom bar:** Home and Profile only.
 
-### Step-by-Step Implementation:
-1. **Data Layer (`features/turfs/data/`)**:
-   - Implement `TurfRepository.getTurfById(turfId)`.
-2. **Presentation (`features/turfs/presentation/screens/turf_detail_screen.dart`)**:
-   - **Photo Carousel**:
-     - PageView with smooth dot indicators showing all turf photos with pinch-to-zoom support.
-     - Back button & Favorite/Share button overlaid on the app bar.
-   - **Header Section**:
-     - Turf name, full address, area badge, distance badge.
-     - "Info updated on [Date]" freshness indicator.
-   - **Specs & Surface Info**:
-     - Surface pill (Artificial Grass / Natural Grass).
-     - Formats supported (e.g. Box Cricket, 5-a-side, 7-a-side).
-   - **Pricing Matrix Card**:
-     - Base hourly price.
-     - Detailed breakdown table: Weekday rates, Weekend rates, Peak-hour rates.
-   - **Operating Hours Accordion**:
-     - Daily schedule (Mon–Sun) with an "Open Now" / "Closed" real-time status chip.
-   - **Amenities Grid**:
-     - Icons + labels for: Floodlights, Parking, Changing Rooms, Washrooms, Drinking Water, Equipment on Rent.
-   - **Map Preview**:
-     - Embedded static/interactive map preview showing the pin on turf coordinates.
-   - **Sticky Bottom Action Bar**:
-     - **Call Button**: Opens system phone dialer (`tel:<phone>`) via `url_launcher`.
-     - **Get Directions Button**: Launches Google Maps navigation (`https://www.google.com/maps/dir/?api=1&destination=lat,lng`).
-     - **Share Button**: Native sheet sharing turf name, address, and deep link via `share_plus`.
+## Status
 
----
-
-## Phase 5: Screen 5 — Profile Screen
-
-### Objective
-Allow the user to view/edit their profile, configure their preferred sport, manage permissions, and handle session actions.
-
-### Step-by-Step Implementation:
-1. **Data Layer (`features/profile/data/`)**:
-   - Implement `ProfileRepository`:
-     - `updateUserProfile(name, preferredSport)`
-     - `uploadProfilePicture(File imageFile)`
-     - `deleteUserAccount()`
-2. **State Management (`features/profile/presentation/providers/`)**:
-   - `profileControllerProvider` syncing with Firestore user document.
-3. **Presentation (`features/profile/presentation/screens/profile_screen.dart`)**:
-   - **User Header**:
-     - Avatar with edit overlay icon (image picker for camera/gallery).
-     - Display name and email / phone number.
-   - **Preferences Section**:
-     - **Preferred Sport Selector**: Radio/Segmented control for `Cricket`, `Football`, or `Both`. Changing this updates the default filter on Home.
-   - **Settings & Information**:
-     - Location permission status tile (with quick link to OS app settings).
-     - App version display (`v1.0.0`).
-     - External links: Help & Support, Privacy Policy, Terms of Use.
-   - **Account Actions**:
-     - **Log Out**: Confirmation modal $\rightarrow$ Clear Firebase session $\rightarrow$ Navigate to `/auth`.
-     - **Delete Account**: Destructive confirmation dialog with password/re-auth step $\rightarrow$ Remove Firestore record and Firebase user.
-
----
-
-## Phase 6: Mock Data Seeding & Launch City Setup
-
-### Objective
-Populate Firestore with realistic launch city turfs to enable immediate testing of distance sorting, filters, search, and carousel interactions.
-
-### Step-by-Step Implementation:
-1. Create a seeding script or fixture (`assets/seed/turfs_seed.json`).
-2. Populate 15–20 real/sample turfs with:
-   - Accurate coordinates in the designated launch city.
-   - Cover photos and gallery images (stored in Firebase Storage or high-res Unsplash links).
-   - Pricing matrices, amenities arrays, and valid contact numbers.
-   - Pre-computed `nameLowercase` keywords for prefix search.
-
----
-
-## Phase 7: Polish, Offline Handling & Quality Assurance
-
-### Step-by-Step Implementation:
-1. **Offline & Caching**:
-   - Implement Firestore local persistence.
-   - Configure `cached_network_image` cache managers.
-   - Add connectivity listener displaying "You are currently offline" banner.
-2. **Error & Edge Case Handling**:
-   - GPS disabled prompt.
-   - Zero search results state with quick reset.
-   - Image load fallbacks and shimmer placeholders.
-3. **Audit against Non-Functional Requirements**:
-   - Cold start speed measurement.
-   - Minimum tap target audit (ensure all buttons $\ge 48\text{px}$).
-   - Test accessibility scaling and screen reader labels.
+| Step | State |
+| --- | --- |
+| Data layer: `email`/`phone` in `updateUserProfile` and `updateProfile`, `appVersion`, `supportEmail`, `recentlyViewedProvider`, `turfsByIdsProvider` | Written |
+| `profile_header`, `preferred_sport_card`, `profile_menu_card`, `edit_profile_sheet`, `coming_soon_sheet` | Written |
+| `turf_ids_list_screen` (shared by Saved Turfs and Recently Viewed), `info_page_screen`, routes `/saved-turfs`, `/recently-viewed`, `/terms`, `/privacy` | Written |
+| Recently-viewed tracking on the detail screen | Written |
+| `profile_screen.dart` rewritten | Written |
+| Tests, `flutter analyze`, run on a device, visual comparison | **Not done** (Flutter is not installed in this shell) |

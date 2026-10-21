@@ -7,6 +7,8 @@ class CustomButton extends StatelessWidget {
   final bool isLoading;
   final bool isOutlined;
   final IconData? icon;
+  final IconData? trailingIcon;
+  final double? borderRadius;
   final Color? backgroundColor;
   final Color? textColor;
 
@@ -17,9 +19,15 @@ class CustomButton extends StatelessWidget {
     this.isLoading = false,
     this.isOutlined = false,
     this.icon,
+    this.trailingIcon,
+    this.borderRadius,
     this.backgroundColor,
     this.textColor,
   });
+
+  RoundedRectangleBorder? get _shape => borderRadius == null
+      ? null
+      : RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius!));
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +37,7 @@ class CustomButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: backgroundColor ?? AppColors.primary),
           foregroundColor: textColor ?? AppColors.primary,
+          shape: _shape,
         ),
         child: _buildChild(context),
       );
@@ -39,6 +48,7 @@ class CustomButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor ?? AppColors.primary,
         foregroundColor: textColor ?? Colors.white,
+        shape: _shape,
       ),
       child: _buildChild(context),
     );
@@ -53,6 +63,20 @@ class CustomButton extends StatelessWidget {
           strokeWidth: 2.5,
           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
         ),
+      );
+    }
+
+    if (trailingIcon != null) {
+      // Label stays centred; the arrow sits at the trailing edge.
+      return Stack(
+        alignment: Alignment.center,
+        children: [
+          Text(text),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Icon(trailingIcon, size: 22),
+          ),
+        ],
       );
     }
 

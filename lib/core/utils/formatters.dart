@@ -25,4 +25,9 @@ class AppFormatters {
   static String formatDate(DateTime dateTime) {
     return DateFormat('MMM d, yyyy').format(dateTime);
   }
+
+  /// Format timestamp for "Info updated on" labels (e.g. 18 Oct 2026)
+  static String formatDateShort(DateTime dateTime) {
+    return DateFormat('d MMM yyyy').format(dateTime);
+  }
 }

@@ -6,6 +6,17 @@ class AppColors {
   static const Color primaryDark = Color(0xFF059669);
   static const Color primaryLight = Color(0xFF34D399);
   static const Color accent = Color(0xFFF59E0B); // Amber / Gold accent
+  static const Color lime = Color(0xFFA3E635); // Glow / pitch-line highlight
+  static const Color deepGreen = Color(0xFF052E16); // Stadium grass shadow
+
+  // Light auth sheet
+  static const Color authSheet = Color(0xFFF7F8F4);
+  static const Color authField = Color(0xFFEEF0EB);
+  static const Color authFieldBorder = Color(0xFFDDE1D8);
+  static const Color authForest = Color(0xFF14412B);
+  static const Color authText = Color(0xFF0F1F17);
+  static const Color authMuted = Color(0xFF6B7280);
+  static const Color limeTint = Color(0xFFEEF8D6); // Price strip on turf cards
 
   // Neutral & Slate (Dark mode & Card styles)
   static const Color background = Color(0xFF0F172A); // Dark Slate

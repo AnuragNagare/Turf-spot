@@ -11,7 +11,12 @@ class TurfModel {
   final List<String> sports; // 'cricket', 'football'
   final List<String> formats; // 'Box Cricket', '5-a-side', etc.
   final String surface; // 'Artificial Grass', 'Natural Grass'
+  final String? turfType; // e.g. 'Artificial Grass' (surface may be more specific)
   final int pricePerHour;
+  final int? weekdayRate;
+  final int? weekendRate;
+  final int? peakRate;
+  final String? peakHours; // e.g. '6 PM – 11 PM'
   final Map<String, String> priceDetails; // 'Weekday', 'Weekend', 'Peak Hours'
   final Map<String, String> openingHours; // 'Mon-Fri': '6:00 AM - 12:00 AM', etc.
   final List<String> amenities; // 'floodlights', 'parking', 'washroom', etc.
@@ -19,6 +24,8 @@ class TurfModel {
   final String phone;
   final bool isActive;
   final DateTime updatedAt;
+  final double? rating;
+  final int? reviewCount;
   double? calculatedDistanceKm;
 
   TurfModel({
@@ -34,6 +41,11 @@ class TurfModel {
     required this.sports,
     required this.formats,
     required this.surface,
+    this.turfType,
+    this.weekdayRate,
+    this.weekendRate,
+    this.peakRate,
+    this.peakHours,
     required this.pricePerHour,
     required this.priceDetails,
     required this.openingHours,
@@ -42,11 +54,19 @@ class TurfModel {
     required this.phone,
     required this.isActive,
     required this.updatedAt,
+    this.rating,
+    this.reviewCount,
     this.calculatedDistanceKm,
   });
 
   String get coverPhoto =>
       photos.isNotEmpty ? photos.first : 'https://images.unsplash.com/photo-1529900245534-47fbfb220d5e?w=800';
+
+  /// Highly rated and widely reviewed turfs get the 'Popular' badge.
+  bool get isPopular => (rating ?? 0) >= 4.5 && (reviewCount ?? 0) >= 100;
+
+  bool get hasRates =>
+      weekdayRate != null || weekendRate != null || peakRate != null;
 
   bool get supportsCricket =>
       sports.any((s) => s.toLowerCase() == 'cricket');
@@ -70,6 +90,11 @@ class TurfModel {
       sports: sports,
       formats: formats,
       surface: surface,
+      turfType: turfType,
+      weekdayRate: weekdayRate,
+      weekendRate: weekendRate,
+      peakRate: peakRate,
+      peakHours: peakHours,
       pricePerHour: pricePerHour,
       priceDetails: priceDetails,
       openingHours: openingHours,
@@ -78,6 +103,8 @@ class TurfModel {
       phone: phone,
       isActive: isActive,
       updatedAt: updatedAt,
+      rating: rating,
+      reviewCount: reviewCount,
       calculatedDistanceKm: calculatedDistanceKm ?? this.calculatedDistanceKm,
     );
   }
@@ -96,6 +123,11 @@ class TurfModel {
       sports: List<String>.from(map['sports'] ?? []),
       formats: List<String>.from(map['formats'] ?? []),
       surface: map['surface'] ?? 'Artificial Grass',
+      turfType: map['turfType'],
+      weekdayRate: (map['weekdayRate'] as num?)?.toInt(),
+      weekendRate: (map['weekendRate'] as num?)?.toInt(),
+      peakRate: (map['peakRate'] as num?)?.toInt(),
+      peakHours: map['peakHours'],
       pricePerHour: (map['pricePerHour'] as num?)?.toInt() ?? 1000,
       priceDetails: Map<String, String>.from(map['priceDetails'] ?? {}),
       openingHours: Map<String, String>.from(map['openingHours'] ?? {}),
@@ -106,6 +138,8 @@ class TurfModel {
       updatedAt: map['updatedAt'] != null
           ? DateTime.tryParse(map['updatedAt']) ?? DateTime.now()
           : DateTime.now(),
+      rating: (map['rating'] as num?)?.toDouble(),
+      reviewCount: (map['reviewCount'] as num?)?.toInt(),
     );
   }
 }

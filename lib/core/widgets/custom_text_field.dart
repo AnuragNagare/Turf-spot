@@ -12,6 +12,7 @@ class CustomTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
   final bool autofocus;
+  final bool light;
 
   const CustomTextField({
     super.key,
@@ -25,7 +26,40 @@ class CustomTextField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.autofocus = false,
+    this.light = false,
   });
+
+  InputDecoration _decoration() {
+    if (!light) {
+      return InputDecoration(
+        hintText: hintText,
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, color: AppColors.textSecondary, size: 20)
+            : null,
+        suffixIcon: suffixIcon,
+      );
+    }
+
+    OutlineInputBorder border(Color color, [double width = 1]) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(color: AppColors.authMuted, fontSize: 15),
+      fillColor: AppColors.authField,
+      prefixIcon: prefixIcon != null
+          ? Icon(prefixIcon, color: AppColors.authMuted, size: 22)
+          : null,
+      suffixIcon: suffixIcon,
+      border: border(AppColors.authFieldBorder),
+      enabledBorder: border(AppColors.authFieldBorder),
+      focusedBorder: border(AppColors.authForest, 1.5),
+      errorBorder: border(AppColors.error),
+      focusedErrorBorder: border(AppColors.error, 1.5),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +69,10 @@ class CustomTextField extends StatelessWidget {
         if (labelText != null) ...[
           Text(
             labelText!,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              color: light ? AppColors.authText : AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -50,14 +84,11 @@ class CustomTextField extends StatelessWidget {
           validator: validator,
           onChanged: onChanged,
           autofocus: autofocus,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
-          decoration: InputDecoration(
-            hintText: hintText,
-            prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, color: AppColors.textSecondary, size: 20)
-                : null,
-            suffixIcon: suffixIcon,
+          style: TextStyle(
+            color: light ? AppColors.authText : AppColors.textPrimary,
+            fontSize: 15,
           ),
+          decoration: _decoration(),
         ),
       ],
     );

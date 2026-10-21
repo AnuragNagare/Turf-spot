@@ -6,9 +6,12 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return InMemoryAuthRepository();
 });
 
-final authStateProvider = StreamProvider<UserModel?>((ref) {
+// Emits the current user first, so listeners that start after a login still
+// see the signed-in user, then every later change.
+final authStateProvider = StreamProvider<UserModel?>((ref) async* {
   final repo = ref.watch(authRepositoryProvider);
-  return repo.authStateChanges;
+  yield repo.currentUser;
+  yield* repo.authStateChanges;
 });
 
 class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
@@ -78,11 +81,15 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
 
   Future<void> updateProfile({
     String? name,
+    String? email,
+    String? phone,
     String? photoUrl,
     PreferredSport? preferredSport,
   }) async {
     await _repo.updateUserProfile(
       name: name,
+      email: email,
+      phone: phone,
       photoUrl: photoUrl,
       preferredSport: preferredSport,
     );

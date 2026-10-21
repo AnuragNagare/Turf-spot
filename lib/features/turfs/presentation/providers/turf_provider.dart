@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../auth/presentation/providers/auth_provider.dart';
-import '../../auth/domain/user_model.dart';
-import '../data/turf_repository.dart';
-import '../domain/turf_model.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/domain/user_model.dart';
+import '../../data/turf_repository.dart';
+import '../../domain/turf_model.dart';
 
 final turfRepositoryProvider = Provider<TurfRepository>((ref) {
   return InMemoryTurfRepository();
@@ -67,4 +67,52 @@ final turfDetailProvider = FutureProvider.family<TurfModel?, String>((ref, id) a
     }
   }
   return null;
+});
+
+// Favourite turfs (local to the session for now)
+class FavouriteTurfsNotifier extends StateNotifier<Set<String>> {
+  FavouriteTurfsNotifier() : super(const {});
+
+  void toggle(String turfId) {
+    state = state.contains(turfId)
+        ? (Set<String>.of(state)..remove(turfId))
+        : {...state, turfId};
+  }
+}
+
+final favouriteTurfsProvider =
+    StateNotifierProvider<FavouriteTurfsNotifier, Set<String>>(
+  (ref) => FavouriteTurfsNotifier(),
+);
+
+// Recently viewed turf ids, newest first (last 10, session only)
+class RecentlyViewedNotifier extends StateNotifier<List<String>> {
+  static const _maxItems = 10;
+
+  RecentlyViewedNotifier() : super(const []);
+
+  void add(String turfId) {
+    state = [turfId, ...state.where((id) => id != turfId)].take(_maxItems).toList();
+  }
+}
+
+final recentlyViewedProvider =
+    StateNotifierProvider<RecentlyViewedNotifier, List<String>>(
+  (ref) => RecentlyViewedNotifier(),
+);
+
+// Resolves comma-separated turf ids to turfs, keeping the given order.
+// (A String key, not a List, so the family can compare keys by value.)
+final turfsByIdsProvider =
+    FutureProvider.family<List<TurfModel>, String>((ref, idsKey) async {
+  if (idsKey.isEmpty) return const [];
+  final ids = idsKey.split(',');
+
+  final repo = ref.watch(turfRepositoryProvider);
+  final lat = ref.watch(userLatitudeProvider);
+  final lon = ref.watch(userLongitudeProvider);
+  final all = await repo.getTurfs(userLatitude: lat, userLongitude: lon);
+  final byId = {for (final turf in all) turf.id: turf};
+
+  return [for (final id in ids) if (byId[id] != null) byId[id]!];
 });

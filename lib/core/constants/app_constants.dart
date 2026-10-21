@@ -2,6 +2,8 @@ class AppConstants {
   static const String appName = 'TurfSpot';
   static const String appTagline = 'Find your turf in 30 seconds';
   static const String defaultCity = 'Mumbai';
+  static const String appVersion = '1.0.0';
+  static const String supportEmail = 'support@turfspot.com';
   
   // Storage & Preference Keys
   static const String prefUserKey = 'turfspot_user';

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/splash_painters.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -15,32 +16,40 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+  static const _totalDuration = Duration(milliseconds: 2000);
+
+  late final AnimationController _controller;
+
+  // Stage timings follow the storyboard (fractions of the 2.0s timeline).
+  late final Animation<double> _stadium; // 0.0 - 0.3s  fade in
+  late final Animation<double> _pitch; //   0.3 - 0.8s  pitch lines draw
+  late final Animation<double> _logo; //    0.8 - 1.2s  logo reveal
+  late final Animation<double> _text; //    1.2 - 1.8s  name + tagline
+  late final Animation<double> _exit; //    1.8 - 2.0s  shrink / hand-off
+
+  Animation<double> _stage(double begin, double end, Curve curve) {
+    return CurvedAnimation(
+      parent: _controller,
+      curve: Interval(begin, end, curve: curve),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
+    _controller = AnimationController(vsync: this, duration: _totalDuration);
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeIn),
-    );
+    _stadium = _stage(0.0, 0.15, Curves.easeIn);
+    _pitch = _stage(0.15, 0.4, Curves.easeInOut);
+    _logo = _stage(0.4, 0.6, Curves.easeOutBack);
+    _text = _stage(0.6, 0.9, Curves.easeOutCubic);
+    _exit = _stage(0.9, 1.0, Curves.easeInCubic);
 
-    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
-    );
-
-    _animController.forward();
-    _checkAuthAndNavigate();
+    _runAndNavigate();
   }
 
-  Future<void> _checkAuthAndNavigate() async {
-    await Future.delayed(const Duration(milliseconds: 2000));
+  Future<void> _runAndNavigate() async {
+    await _controller.forward();
     if (!mounted) return;
 
     final user = ref.read(authRepositoryProvider).currentUser;
@@ -53,7 +62,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   void dispose() {
-    _animController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -61,73 +70,112 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Glowing Logo Container
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: AppColors.primary.withOpacity(0.4),
-                      width: 2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.25),
-                        blurRadius: 28,
-                        spreadRadius: 4,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.sports_soccer_rounded,
-                      size: 52,
-                      color: AppColors.primary,
-                    ),
-                  ),
+      body: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final exit = _exit.value;
+          final fade = 1.0 - exit;
+
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              CustomPaint(
+                painter: StadiumBackgroundPainter(
+                  opacity: _stadium.value * (1.0 - 0.85 * exit),
                 ),
-                const SizedBox(height: 28),
-                Text(
-                  AppConstants.appName,
-                  style: GoogleFonts.outfit(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                    color: AppColors.textPrimary,
-                  ),
+              ),
+              CustomPaint(
+                painter: PitchLinesPainter(progress: _pitch.value, opacity: fade),
+              ),
+              Align(
+                alignment: const Alignment(0, -0.3),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildLogo(exit),
+                    const SizedBox(height: 20),
+                    _buildTitle(fade),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  AppConstants.appTagline,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLogo(double exit) {
+    final reveal = _logo.value;
+    final scale = (0.4 + 0.6 * reveal) * (1.0 - 0.4 * exit);
+
+    return Opacity(
+      opacity: reveal.clamp(0.0, 1.0),
+      child: Transform.scale(
+        scale: scale,
+        child: SizedBox(
+          width: 96,
+          height: 120,
+          child: Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              Positioned.fill(
+                child: CustomPaint(painter: LogoPinPainter(glow: reveal)),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(top: 22),
+                child: Icon(
+                  Icons.sports_soccer_rounded,
+                  size: 46,
+                  color: AppColors.lime,
                 ),
-                const SizedBox(height: 48),
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTitle(double fade) {
+    final t = _text.value;
+
+    return Opacity(
+      opacity: (t * fade).clamp(0.0, 1.0),
+      child: Transform.translate(
+        offset: Offset(0, 16 * (1.0 - t)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text.rich(
+              TextSpan(
+                style: GoogleFonts.outfit(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+                children: const [
+                  TextSpan(
+                    text: 'Turf',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
+                  TextSpan(
+                    text: 'Spot',
+                    style: TextStyle(color: AppColors.lime),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              AppConstants.appTagline,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
     );
