@@ -26,20 +26,24 @@ class AuthHero extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const CustomPaint(
-            painter: StadiumBackgroundPainter(
-              opacity: 1,
-              horizonFactor: _heroHorizon,
+          const StadiumPhoto(horizonFactor: _heroHorizon),
+          // Darkens the photo so the white wordmark stays readable.
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x66010504), Color(0x99010504)],
+              ),
             ),
           ),
-          const CustomPaint(painter: _SkylinePainter()),
           const CustomPaint(painter: _RibbonPainter()),
           Padding(
             padding: EdgeInsets.only(top: topInset + 8),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const TurfSpotLogoMark(width: 64),
+                const TurfSpotLogoMark(width: 76),
                 const SizedBox(height: 10),
                 Text.rich(
                   TextSpan(
@@ -77,59 +81,6 @@ class AuthHero extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Dark city silhouette on the horizon, with a few lit windows.
-class _SkylinePainter extends CustomPainter {
-  const _SkylinePainter();
-
-  // (x as fraction of width, width fraction, height fraction of the sky)
-  static const _buildings = [
-    (0.20, 0.06, 0.16),
-    (0.26, 0.05, 0.26),
-    (0.31, 0.07, 0.18),
-    (0.38, 0.05, 0.30),
-    (0.43, 0.06, 0.22),
-    (0.49, 0.05, 0.34),
-    (0.54, 0.07, 0.20),
-    (0.61, 0.05, 0.28),
-    (0.66, 0.06, 0.17),
-    (0.72, 0.06, 0.24),
-  ];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final base = size.height * _heroHorizon;
-    final skyHeight = base;
-    final body = Paint()..color = const Color(0xFF07130D);
-    final windows = Paint()..color = AppColors.accent.withOpacity(0.55);
-
-    for (final (x, w, h) in _buildings) {
-      final rect = Rect.fromLTWH(
-        size.width * x,
-        base - skyHeight * h * 0.5,
-        size.width * w,
-        skyHeight * h * 0.5,
-      );
-      canvas.drawRect(rect, body);
-      for (var i = 0; i < 3; i++) {
-        canvas.drawRect(
-          Rect.fromLTWH(rect.left + rect.width * (0.2 + 0.3 * (i % 2)),
-              rect.top + 8.0 + i * 11, 3, 3),
-          windows,
-        );
-      }
-    }
-
-    // Low tree line along the horizon.
-    final trees = Paint()..color = const Color(0xFF06150C);
-    for (var x = 0.0; x < size.width; x += 26) {
-      canvas.drawCircle(Offset(x, base), 14 + (x % 3) * 3, trees);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_SkylinePainter old) => false;
 }
 
 /// Bright green ribbons that sweep in from the top-right and left edges.

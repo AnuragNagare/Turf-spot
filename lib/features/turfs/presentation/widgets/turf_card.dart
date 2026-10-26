@@ -183,11 +183,15 @@ class TurfCard extends ConsumerWidget {
           _buildRating(),
         ],
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 10,
-          runSpacing: 4,
+        // Column, not Wrap: each row gets a bounded width so long names ellipsize.
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final amenity in turf.amenities.take(3)) _amenity(amenity),
+            for (final amenity in turf.amenities.take(2))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: _amenity(amenity),
+              ),
           ],
         ),
         const Spacer(),
@@ -262,9 +266,13 @@ class TurfCard extends ConsumerWidget {
       children: [
         Icon(amenityIcon(amenity), size: 15, color: AppColors.authMuted),
         const SizedBox(width: 4),
-        Text(
-          amenityShortLabel(amenity),
-          style: const TextStyle(fontSize: 12, color: AppColors.authMuted),
+        Flexible(
+          child: Text(
+            amenityShortLabel(amenity),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, color: AppColors.authMuted),
+          ),
         ),
       ],
     );

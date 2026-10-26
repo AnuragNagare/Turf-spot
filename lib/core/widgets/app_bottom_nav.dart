@@ -27,8 +27,8 @@ class AppBottomNav extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        padding: const EdgeInsets.all(8),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(28),
@@ -53,7 +53,7 @@ class AppBottomNav extends StatelessWidget {
                     onTap: () => onTap(i),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      height: 60,
+                      height: 52,
                       decoration: BoxDecoration(
                         color: i == currentIndex ? AppColors.authForest : Colors.transparent,
                         borderRadius: BorderRadius.circular(22),
@@ -63,7 +63,7 @@ class AppBottomNav extends StatelessWidget {
                         children: [
                           Icon(
                             items[i].icon,
-                            size: 26,
+                            size: 24,
                             color: i == currentIndex ? Colors.white : AppColors.authMuted,
                           ),
                           const SizedBox(height: 2),

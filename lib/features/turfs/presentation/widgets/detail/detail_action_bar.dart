@@ -36,6 +36,7 @@ class DetailActionBar extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
+              flex: 3,
               child: _ActionButton(
                 label: 'Call',
                 icon: Icons.phone_rounded,
@@ -47,7 +48,7 @@ class DetailActionBar extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Expanded(
-              flex: 13,
+              flex: 5,
               child: _ActionButton(
                 label: 'Directions',
                 icon: Icons.near_me_outlined,
@@ -58,6 +59,7 @@ class DetailActionBar extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Expanded(
+              flex: 3,
               child: _ActionButton(
                 label: 'Share',
                 icon: Icons.ios_share_rounded,

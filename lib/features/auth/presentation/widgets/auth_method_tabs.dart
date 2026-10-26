@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import 'google_logo.dart';
 
-/// Email / Phone (OTP) / Google tab row driven by a three-tab [TabController].
+/// Email / Google tab row driven by a two-tab [TabController].
 class AuthMethodTabs extends StatelessWidget {
   final TabController controller;
 
@@ -14,23 +14,21 @@ class AuthMethodTabs extends StatelessWidget {
     switch (i) {
       case 0:
         return Icon(Icons.mail_outline_rounded, size: 24, color: color);
-      case 1:
-        return Icon(Icons.smartphone_rounded, size: 24, color: color);
       default:
         return const GoogleLogo(size: 22);
     }
   }
 
-  static const _labels = ['Email', 'Phone (OTP)', 'Google'];
+  static const _labels = ['Email', 'Google'];
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 56,
+      height: 48,
       child: AnimatedBuilder(
         animation: controller.animation!,
         builder: (context, _) {
-          final t = controller.animation!.value.clamp(0.0, 2.0);
+          final t = controller.animation!.value.clamp(0.0, 1.0);
 
           return Stack(
             children: [
@@ -41,9 +39,9 @@ class AuthMethodTabs extends StatelessWidget {
                 ),
               ),
               Align(
-                alignment: Alignment(t - 1, 1),
+                alignment: Alignment(t * 2 - 1, 1),
                 child: FractionallySizedBox(
-                  widthFactor: 1 / 3,
+                  widthFactor: 1 / 2,
                   child: Container(height: 3, color: AppColors.lime),
                 ),
               ),
@@ -69,12 +67,13 @@ class AuthMethodTabs extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 _icon(i, controller.index == i),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 4),
                                 Flexible(
-                                  child: Text(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
                                     _labels[i],
                                     maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                     style: GoogleFonts.outfit(
                                       fontSize: 15,
                                       fontWeight: controller.index == i
@@ -83,6 +82,7 @@ class AuthMethodTabs extends StatelessWidget {
                                       color: controller.index == i
                                           ? AppColors.authText
                                           : AppColors.authMuted,
+                                    ),
                                     ),
                                   ),
                                 ),

@@ -226,6 +226,38 @@ class LogoPinPainter extends CustomPainter {
   bool shouldRepaint(LogoPinPainter old) => old.glow != glow;
 }
 
+/// Night-stadium photo that fills its parent. Falls back to the painted
+/// stadium if the asset is missing.
+class StadiumPhoto extends StatelessWidget {
+  final double opacity;
+  final double horizonFactor;
+  final Alignment alignment;
+
+  const StadiumPhoto({
+    super.key,
+    this.opacity = 1,
+    this.horizonFactor = _horizonFactor,
+    this.alignment = Alignment.center,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity.clamp(0.0, 1.0),
+      child: Image.asset(
+        'assets/images/stadium_night.jpg',
+        fit: BoxFit.cover,
+        alignment: alignment,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => CustomPaint(
+          painter: StadiumBackgroundPainter(opacity: 1, horizonFactor: horizonFactor),
+        ),
+      ),
+    );
+  }
+}
+
 /// Pin logo with a football inside; shared by the splash and the auth hero.
 class TurfSpotLogoMark extends StatelessWidget {
   final double width;
@@ -235,21 +267,35 @@ class TurfSpotLogoMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = glow.clamp(0.0, 1.0);
+
     return SizedBox(
       width: width,
-      height: width * 1.25,
       child: Stack(
-        alignment: Alignment.topCenter,
+        alignment: Alignment.center,
         children: [
-          Positioned.fill(
-            child: CustomPaint(painter: LogoPinPainter(glow: glow)),
+          Container(
+            width: width * 0.6,
+            height: width * 0.6,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.lime.withOpacity(0.45 * g),
+                  blurRadius: width * 0.5,
+                  spreadRadius: width * 0.08,
+                ),
+              ],
+            ),
           ),
-          Padding(
-            padding: EdgeInsets.only(top: width * 0.23),
-            child: Icon(
-              Icons.sports_soccer_rounded,
-              size: width * 0.48,
-              color: AppColors.lime,
+          Image.asset(
+            'assets/images/logo_pin.png',
+            width: width,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => SizedBox(
+              width: width,
+              height: width * 1.25,
+              child: CustomPaint(painter: LogoPinPainter(glow: glow)),
             ),
           ),
         ],

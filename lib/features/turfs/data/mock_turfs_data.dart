@@ -41,9 +41,9 @@ final List<TurfModel> mockTurfs = [
       'Football Goals',
     ],
     photos: [
-      'https://images.unsplash.com/photo-1529900245534-47fbfb220d5e?w=800',
       'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800',
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800',
+      'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800',
+      'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=800',
     ],
     phone: '+919820123456',
     isActive: true,
@@ -83,7 +83,7 @@ final List<TurfModel> mockTurfs = [
     ],
     photos: [
       'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800',
-      'https://images.unsplash.com/photo-1529900245534-47fbfb220d5e?w=800',
+      'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800',
       'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=800',
     ],
     phone: '+919833445566',
@@ -121,7 +121,7 @@ final List<TurfModel> mockTurfs = [
       'Seating Gallery',
     ],
     photos: [
-      'https://images.unsplash.com/photo-1531415074868-036b1c57e329?w=800',
+      'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=800',
       'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800',
     ],
     phone: '+919920887766',
@@ -160,8 +160,8 @@ final List<TurfModel> mockTurfs = [
       'Cafeteria Access',
     ],
     photos: [
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800',
-      'https://images.unsplash.com/photo-1529900245534-47fbfb220d5e?w=800',
+      'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800',
+      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800',
     ],
     phone: '+919811223344',
     isActive: true,
@@ -237,7 +237,7 @@ final List<TurfModel> mockTurfs = [
     ],
     photos: [
       'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800',
-      'https://images.unsplash.com/photo-1529900245534-47fbfb220d5e?w=800',
+      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800',
     ],
     phone: '+919833990011',
     isActive: true,

@@ -79,9 +79,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           return Stack(
             fit: StackFit.expand,
             children: [
-              CustomPaint(
-                painter: StadiumBackgroundPainter(
-                  opacity: _stadium.value * (1.0 - 0.85 * exit),
+              StadiumPhoto(opacity: _stadium.value * (1.0 - 0.85 * exit)),
+              // Keeps the top dark, like the reference.
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.55 * _stadium.value),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.5],
+                  ),
                 ),
               ),
               CustomPaint(
@@ -113,26 +123,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       opacity: reveal.clamp(0.0, 1.0),
       child: Transform.scale(
         scale: scale,
-        child: SizedBox(
-          width: 96,
-          height: 120,
-          child: Stack(
-            alignment: Alignment.topCenter,
-            children: [
-              Positioned.fill(
-                child: CustomPaint(painter: LogoPinPainter(glow: reveal)),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 22),
-                child: Icon(
-                  Icons.sports_soccer_rounded,
-                  size: 46,
-                  color: AppColors.lime,
-                ),
-              ),
-            ],
-          ),
-        ),
+        child: TurfSpotLogoMark(width: 112, glow: reveal),
       ),
     );
   }

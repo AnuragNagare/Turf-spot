@@ -18,7 +18,7 @@ class SportFilterChips extends ConsumerWidget {
     final selectedSport = ref.watch(selectedSportFilterProvider);
 
     return SizedBox(
-      height: 48,
+      height: 42,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),

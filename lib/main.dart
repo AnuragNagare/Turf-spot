@@ -38,6 +38,20 @@ class TurfSpotApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       routerConfig: router,
+      // Large system font sizes made the fixed-size layouts collide.
+      builder: (context, child) {
+        final media = MediaQuery.of(context);
+        return MediaQuery(
+          data: media.copyWith(
+            textScaler: media.textScaler.clamp(
+              minScaleFactor: 1.0,
+              // Narrow screens get no extra scaling at all.
+              maxScaleFactor: media.size.width < 380 ? 1.0 : 1.1,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
   }
 }

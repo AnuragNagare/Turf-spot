@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,18 +22,15 @@ class AuthScreen extends ConsumerStatefulWidget {
 class _AuthScreenState extends ConsumerState<AuthScreen>
     with TickerProviderStateMixin {
   static final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-  static final _phoneRegex = RegExp(r'^\d{10}$');
 
   late final TabController _modeController; // Login / Sign Up
-  late final TabController _methodController; // Email / Phone / Google
+  late final TabController _methodController; // Email / Google
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _phoneController = TextEditingController();
 
   final _formKeyEmail = GlobalKey<FormState>();
-  final _formKeyPhone = GlobalKey<FormState>();
 
   bool _obscurePassword = true;
 
@@ -44,7 +40,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   void initState() {
     super.initState();
     _modeController = TabController(length: 2, vsync: this)..addListener(_onTabChanged);
-    _methodController = TabController(length: 3, vsync: this)..addListener(_onTabChanged);
+    _methodController = TabController(length: 2, vsync: this)..addListener(_onTabChanged);
   }
 
   void _onTabChanged() => setState(() {});
@@ -56,7 +52,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _phoneController.dispose();
     super.dispose();
   }
 
@@ -107,16 +102,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     }
   }
 
-  // Send the phone OTP and open the verification sheet
-  void _handlePhoneSubmit() {
-    if (!_formKeyPhone.currentState!.validate()) return;
-
-    _openOtpBottomSheet(
-      _phoneController.text.trim(),
-      name: _isSignUp ? _nameController.text.trim() : null,
-    );
-  }
-
   // Handle Google Sign In
   Future<void> _handleGoogleSignIn() async {
     try {
@@ -130,130 +115,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     } catch (e) {
       _showErrorSnackBar(e.toString());
     }
-  }
-
-  // Open OTP Modal Dialog
-  void _openOtpBottomSheet(String phone, {String? name}) {
-    ref.read(authControllerProvider.notifier).sendOtp(phone);
-
-    final otpController = TextEditingController();
-    int secondsRemaining = 30;
-    Timer? timer;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.authSheet,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            timer ??= Timer.periodic(const Duration(seconds: 1), (t) {
-              if (secondsRemaining > 0) {
-                setModalState(() => secondsRemaining--);
-              } else {
-                t.cancel();
-              }
-            });
-
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.authFieldBorder,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Verify Phone Number',
-                    style: GoogleFonts.outfit(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.authText,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Enter the 6-digit OTP sent to +91 $phone (Demo: 123456)',
-                    style: const TextStyle(color: AppColors.authMuted, fontSize: 13),
-                  ),
-                  const SizedBox(height: 20),
-                  CustomTextField(
-                    light: true,
-                    controller: otpController,
-                    hintText: '• • • • • •',
-                    keyboardType: TextInputType.number,
-                    prefixIcon: Icons.security_rounded,
-                    autofocus: true,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        secondsRemaining > 0
-                            ? 'Resend in ${secondsRemaining}s'
-                            : 'Didn\'t receive code?',
-                        style: const TextStyle(color: AppColors.authMuted, fontSize: 13),
-                      ),
-                      if (secondsRemaining == 0)
-                        TextButton(
-                          onPressed: () {
-                            setModalState(() => secondsRemaining = 30);
-                            ref.read(authControllerProvider.notifier).sendOtp(phone);
-                          },
-                          child: const Text(
-                            'Resend OTP',
-                            style: TextStyle(color: AppColors.authForest),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  CustomButton(
-                    text: 'Verify & Continue',
-                    backgroundColor: AppColors.authForest,
-                    borderRadius: 18,
-                    onPressed: () async {
-                      if (otpController.text.trim().isEmpty) return;
-                      Navigator.pop(ctx);
-                      timer?.cancel();
-                      await ref.read(authControllerProvider.notifier).verifyOtp(
-                            phone,
-                            otpController.text.trim(),
-                          );
-                      final state = ref.read(authControllerProvider);
-                      if (state.hasError) {
-                        _showErrorSnackBar(
-                            state.error.toString().replaceAll('Exception: ', ''));
-                      } else {
-                        if (mounted) context.go('/home');
-                      }
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    ).whenComplete(() => timer?.cancel());
   }
 
   // Forgot Password Dialog
@@ -320,12 +181,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   String? _validateEmail(String? val) {
     if (val == null || val.trim().isEmpty) return 'Please enter your email';
     if (!_emailRegex.hasMatch(val.trim())) return 'Enter a valid email address';
-    return null;
-  }
-
-  String? _validatePhone(String? val) {
-    if (val == null || val.trim().isEmpty) return 'Please enter your phone number';
-    if (!_phoneRegex.hasMatch(val.trim())) return 'Enter a valid 10-digit phone number';
     return null;
   }
 
@@ -418,38 +273,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     );
   }
 
-  Widget _buildPhoneForm(bool isLoading) {
-    return Form(
-      key: _formKeyPhone,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_isSignUp) _nameField(),
-          CustomTextField(
-            light: true,
-            controller: _phoneController,
-            labelText: 'Phone Number',
-            hintText: 'Enter your 10-digit number',
-            prefixIcon: Icons.smartphone_rounded,
-            keyboardType: TextInputType.phone,
-            validator: _validatePhone,
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'We will text you a 6-digit code to verify your number.',
-            style: TextStyle(color: AppColors.authMuted, fontSize: 13),
-          ),
-          const SizedBox(height: 24),
-          _primaryButton(
-            text: 'Send OTP',
-            isLoading: isLoading,
-            onPressed: _handlePhoneSubmit,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildGoogleBody(bool isLoading) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,7 +293,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     required VoidCallback onPressed,
   }) {
     return SizedBox(
-      height: 60,
+      height: 54,
       child: CustomButton(
         text: text,
         isLoading: isLoading,
@@ -497,7 +320,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       child: OutlinedButton.icon(
         onPressed: isLoading ? null : _handleGoogleSignIn,
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(double.infinity, 58),
+          minimumSize: const Size(double.infinity, 52),
           backgroundColor: Colors.white,
           foregroundColor: AppColors.authText,
           side: const BorderSide(color: AppColors.authFieldBorder),
@@ -541,18 +364,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     final isLoading = ref.watch(authControllerProvider).isLoading;
     final method = _methodController.index;
 
-    final Widget methodBody = switch (method) {
-      0 => _buildEmailForm(isLoading),
-      1 => _buildPhoneForm(isLoading),
-      _ => _buildGoogleBody(isLoading),
-    };
+    final Widget methodBody =
+        method == 0 ? _buildEmailForm(isLoading) : _buildGoogleBody(isLoading);
 
     return Scaffold(
       backgroundColor: AppColors.authSheet,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final viewport = constraints.maxHeight;
-          final heroHeight = (viewport * 0.34).clamp(230.0, 340.0);
+          final heroHeight = (viewport * 0.30).clamp(200.0, 300.0);
 
           return SingleChildScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -597,7 +417,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                   AuthMethodTabs(controller: _methodController),
                                   const SizedBox(height: 20),
                                   methodBody,
-                                  if (method != 2) ...[
+                                  if (method == 0) ...[
                                     const SizedBox(height: 18),
                                     _orDivider(),
                                     const SizedBox(height: 18),

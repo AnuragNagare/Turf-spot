@@ -33,9 +33,7 @@ class HomeHero extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            const CustomPaint(
-              painter: StadiumBackgroundPainter(opacity: 1, horizonFactor: 0.6),
-            ),
+            const StadiumPhoto(horizonFactor: 0.6),
             // Darkens the left side so the white text stays readable.
             const DecoratedBox(
               decoration: BoxDecoration(

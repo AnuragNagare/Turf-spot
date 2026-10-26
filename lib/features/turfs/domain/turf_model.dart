@@ -60,7 +60,7 @@ class TurfModel {
   });
 
   String get coverPhoto =>
-      photos.isNotEmpty ? photos.first : 'https://images.unsplash.com/photo-1529900245534-47fbfb220d5e?w=800';
+      photos.isNotEmpty ? photos.first : 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800';
 
   /// Highly rated and widely reviewed turfs get the 'Popular' badge.
   bool get isPopular => (rating ?? 0) >= 4.5 && (reviewCount ?? 0) >= 100;

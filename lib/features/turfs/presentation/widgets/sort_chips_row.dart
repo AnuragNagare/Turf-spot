@@ -20,7 +20,7 @@ class SortChipsRow extends ConsumerWidget {
     final selected = ref.watch(turfSortOptionProvider);
 
     return SizedBox(
-      height: 44,
+      height: 40,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
